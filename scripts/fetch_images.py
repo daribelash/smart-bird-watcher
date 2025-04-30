@@ -3,8 +3,6 @@ import aiohttp
 import aiofiles
 import os
 import re
-import sys
-import pandas as pd
 from typing import Any, Dict
 
 # async -> the function can pause its execution and let other tasks run.
