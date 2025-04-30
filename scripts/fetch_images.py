@@ -7,15 +7,10 @@ import sys
 import pandas as pd
 from typing import Any, Dict
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from config.config import OBSERVATION_URL, API_REQUEST_INTERVAL, PAGES_TO_FETCH, TEXAS_BIRDS_CSV, RAW_DATA_PATH
-
-birds_df = pd.read_csv(TEXAS_BIRDS_CSV)
-
 # async -> the function can pause its execution and let other tasks run.
 # they return coroutine objects that the event loop (managed by asyncio.run(main())) 
 # schedules and runs concurrently
-async def fetch_page(session: aiohttp.ClientSession, params: Dict[str, Any], semaphore: asyncio.Semaphore) -> Dict[str, Any]:
+async def fetch_page(session: aiohttp.ClientSession, params: Dict[str, Any], semaphore: asyncio.Semaphore, url: str, api_limit: int) -> Dict[str, Any]:
     """
     Fetches a single page of observations from the iNaturalist API.
     This function uses an asynchronous context manager with a semaphore to ensure that only a limited
@@ -29,9 +24,9 @@ async def fetch_page(session: aiohttp.ClientSession, params: Dict[str, Any], sem
         Dict[str, Any]: The JSON data returned from the API as a dictionary.
     """
     async with semaphore:  # global semaphore
-        async with session.get(OBSERVATION_URL, params=params) as response:
+        async with session.get(url, params=params) as response:
             data = await response.json()
-            await asyncio.sleep(API_REQUEST_INTERVAL)  # enforce delay globally
+            await asyncio.sleep(api_limit)  # enforce delay globally
             return data
     
 async def download_content(session: aiohttp.ClientSession, url: str, filename: str) -> None:
@@ -59,7 +54,7 @@ async def download_content(session: aiohttp.ClientSession, url: str, filename: s
     except Exception as e:
        print(f"Cannot download {url}: {e}")
     
-async def process_species(session: aiohttp.ClientSession, bird_name: str, taxon_id: int, pages_to_fetch: int, semaphore: asyncio.Semaphore) -> None:
+async def process_species(session: aiohttp.ClientSession, bird_name: str, taxon_id: int, pages_to_fetch: int, data_path: str, url: str, api_limit: int, semaphore: asyncio.Semaphore) -> None:
     """
     Processes observations for a specific bird species by fetching observation pages and downloading images.
     For a given bird species (specified by its name and taxon ID), this function:
@@ -78,7 +73,7 @@ async def process_species(session: aiohttp.ClientSession, bird_name: str, taxon_
         None
     """
     bird_name_replace = re.sub(r"[- ]", "_", bird_name).lower()
-    species_dir = os.path.join(RAW_DATA_PATH, bird_name_replace)
+    species_dir = os.path.join(data_path, bird_name_replace)
     os.makedirs(species_dir, exist_ok=True)
 
     fetch_tasks = []
@@ -95,7 +90,7 @@ async def process_species(session: aiohttp.ClientSession, bird_name: str, taxon_
             "nelat": 33.75,
             "nelng": -93.50
         }
-        fetch_tasks.append(fetch_page(session, params, semaphore))
+        fetch_tasks.append(fetch_page(session, params, semaphore, url, api_limit))
 
     results = await asyncio.gather(*fetch_tasks)
 
@@ -129,27 +124,3 @@ async def process_species(session: aiohttp.ClientSession, bird_name: str, taxon_
     print(f"{bird_name}: Total images queued for download: {image_counter - 1}")
     await asyncio.gather(*image_download_tasks)
     return licensing_metadata
-
-async def main():
-  # the session is automatically closed when the block is exited to ensure proper cleanup
-  # Passing the same session object to each asynchronous function 
-  # (like fetch_page and download_content) allows to reuse HTTP connections
-    all_licensing = []
-    global_semaphore = asyncio.Semaphore(1)
-    
-    async with aiohttp.ClientSession() as session:
-        tasks = []
-        for index, row in birds_df.iterrows():
-            bird_name = row["bird_name"]
-            taxon_id = row["taxon_id"]
-            tasks.append(process_species(session, bird_name, taxon_id, PAGES_TO_FETCH, global_semaphore))
-        results = await asyncio.gather(*tasks)
-        for metadata in results:
-            all_licensing.extend(metadata)
-
-    licensing_csv = os.path.join(RAW_DATA_PATH, "attribution_credit.csv")
-    pd.DataFrame(all_licensing).to_csv(licensing_csv, index=False)
-    print(f"Licensing metadata saved to {licensing_csv}")
-
-if __name__ == "__main__":
-    asyncio.run(main())
