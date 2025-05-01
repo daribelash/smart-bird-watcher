@@ -1,7 +1,20 @@
 import os
 import re
 
-def rename_image_name(folder_path: str) -> None:
+def rename_image_files(folder_path: str) -> None:
+  """
+  Renames all image files in the specified folder to follow a uniform naming convention.
+  The new filenames are formatted as `<folder_name>_<index>.<extension>`, where:
+  - `folder_name` is the name of the directory containing the files.
+  - `index` is a 1-based index based on the numeric order extracted from the original filenames.
+  - `extension` is preserved and converted to lowercase.
+  Files starting with '.' or named 'DS_Store' are ignored.
+  Files are sorted numerically before renaming, based on digits extracted from filenames.
+  Args:
+    folder_path (str): The path to the folder containing the image files to rename.
+  Returns:
+    None
+  """
   folder_name = os.path.basename(os.path.normpath(folder_path))
 
   files_list = [f for f in os.listdir(folder_path)
