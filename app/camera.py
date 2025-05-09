@@ -37,17 +37,3 @@ class Camera:
     Deallocated webcam resources
     """
     self.cap.release()
-
-
-if __name__ == "__main__":
-  cam = Camera()
-  try:
-    while True:
-      frame = cam.get_frame()
-      cv2.imshow("live", frame)
-
-      if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-  finally:
-    cam.release()
-    cv2.destroyAllWindows()

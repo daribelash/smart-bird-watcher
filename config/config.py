@@ -12,6 +12,8 @@ RAW_DATA_PATH = "../../datasets/data_original"
 DATASET_PATH = "../../datasets/texas_birds_dataset"
 MODEL_SAVE_PATH = "../models/best_effnetb2.pth"
 RESULTS_SAVE_PATH = "../models/model_results_effnetb2.json"
+STATIC_PATH = "../static"
+IMAGE_NAME = "latest.jpg"
 
 # Training parameters
 BATCH_SIZE = 32
