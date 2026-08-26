@@ -1,0 +1,8 @@
+
+.DS_Store
+scripts/__pycache__/
+config/__pycache__/
+birds-env/
+app/__pycache__/
+logs/
+static/
