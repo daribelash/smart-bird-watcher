@@ -1,4 +1,5 @@
 import os
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 # API handling parameters
 TAXA_URL = "https://api.inaturalist.org/v1/taxa"
@@ -7,12 +8,12 @@ API_REQUEST_INTERVAL = 5
 PAGES_TO_FETCH = 2
 
 # Paths
-TEXAS_BIRDS_CSV = "../config/texas_birds.csv"
-RAW_DATA_PATH = "../../datasets/data_original"
-DATASET_PATH = "../../datasets/texas_birds_dataset"
-MODEL_SAVE_PATH = "../models/best_effnetb2.pth"
-RESULTS_SAVE_PATH = "../models/model_results_effnetb2.json"
-STATIC_PATH = "../static"
+TEXAS_BIRDS_CSV = os.path.join(BASE_DIR, "config", "texas_birds.csv")
+RAW_DATA_PATH = os.path.join(BASE_DIR, "datasets", "data_original")
+DATASET_PATH = os.path.join(BASE_DIR, "datasets", "texas_birds_dataset")
+MODEL_SAVE_PATH = os.path.join(BASE_DIR, "models", "best_effnetb2.pth")
+RESULTS_SAVE_PATH = os.path.join(BASE_DIR, "models", "model_results_effnetb2.json")
+STATIC_PATH = os.path.join(BASE_DIR, "static")
 IMAGE_NAME = "latest.jpg"
 
 # Training parameters
@@ -27,3 +28,6 @@ EPOCHS = 10
 # Early stopping parameters
 EARLY_STOPPING_PATIENCE = 3
 EARLY_STOPPING_DELTA = 0.0
+
+# Inference threshold
+CONFIDENCE_THRESHOLD = 0.95
