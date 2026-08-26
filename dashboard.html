@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bird Detector Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2em; }
+    img { max-width: 300px; margin-top: 1em; }
+  </style>
+</head>
+<body>
+  <h2>🐦 Bird Detection Dashboard</h2>
+  <p id="status">Waiting for new detection...</p>
+  <img id="bird-image" src="" alt="Detected bird will appear here" />
+
+  <script>
+    let lastDetected = "";
+
+    // Ask for notification permission
+    Notification.requestPermission().then(permission => {
+      if (permission !== "granted") {
+        alert("Notifications are disabled. Please enable them to see alerts.");
+      }
+    });
+
+    function showNotification(species, confidence, imageUrl) {
+      new Notification("Bird Detected!", {
+        body: `Species: ${species}\nConfidence: ${(confidence * 100).toFixed(1)}%`,
+        icon: imageUrl
+      });
+    }
+
+    async function pollPrediction() {
+      try {
+        const res = await fetch("http://localhost:8000/predict/latest");
+        const data = await res.json();
+
+        const current = `${data.species}-${data.confidence}`;
+        if (current !== lastDetected) {
+          lastDetected = current;
+          document.getElementById("status").innerText =
+            `✅ ${data.species} (${(data.confidence * 100).toFixed(1)}%)`;
+
+          const imageUrl = `http://localhost:8000/images/${data.image_filename}`;
+          document.getElementById("bird-image").src = `${imageUrl}?t=${new Date().getTime()}`;
+
+          showNotification(data.species, data.confidence, imageUrl);
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+      }
+    }
+
+    setInterval(pollPrediction, 10000); // poll every 10s
+  </script>
+</body>
+</html>
